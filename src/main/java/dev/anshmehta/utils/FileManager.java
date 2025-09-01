@@ -34,7 +34,7 @@ public class FileManager {
                     }
                 }
             }
-            File newDir = new File(this.currentDirAddress + "/" + dir);
+            File newDir = new File(this.currentDirAddress + File.separator + dir);
             if(newDir.mkdir()){
                 System.out.println("Directory created!");
                 return true;

@@ -54,7 +54,7 @@ public class Repository {
     public byte[] findObject(String hashedObject){
 
         try {
-            String objectPath = hashedObject.substring(0, 2) +  "/" + hashedObject.substring(2);
+            String objectPath = hashedObject.substring(0, 2) +  File.separator + hashedObject.substring(2);
 
             return objDirFileManager.readFile(objectPath);
         }catch (Exception e){
@@ -142,19 +142,40 @@ public class Repository {
     public void addToIndex(String filepath) throws RepositoryException {
         try {
             File f = new File(filepath);
-            if (!f.exists() || !f.isFile()) {
-                throw new RepositoryException("File does not exist or is not a file");
+            if (!f.exists()) {
+                throw new RepositoryException("Path does not exist: " + filepath);
             }
 
-            // get file contents -> calculate hash -> create entry
+            if (f.isFile()) {
+                addFileToIndex(filepath);
+            } else if (f.isDirectory()) {
+                // Handle directory recursively
+                addDirectoryToIndex(f, filepath);
+            } else {
+                throw new RepositoryException("Path is neither a file nor directory: " + filepath);
+            }
+        } catch (Exception e) {
+            throw new RepositoryException("Error adding to index: " + e.getMessage());
+        }
+    }
+
+    private void addFileToIndex(String filepath) throws RepositoryException {
+        try {
+            File f = new File(filepath);
+            // Skip .gitjava
+            if (filepath.contains(PATH_NAME)) {
+                return;
+            }
+
+            // Get file contents -> calculate hash -> create entry
             byte[] fileContent = mainDirFileManager.readFile(filepath);
             String fileContentStr = new String(fileContent, java.nio.charset.StandardCharsets.UTF_8);
-            String sha1Hash = writeHashedObject(fileContentStr,"blob");
+            String sha1Hash = writeHashedObject(fileContentStr, "blob");
             IndexEntry entry = new IndexEntry(filepath, sha1Hash, fileContent.length);
 
             ArrayList<IndexEntry> indexEntries = readIndex();
 
-            // check if file already exists in index → update, else add
+            // Check if file already exists in index → update, else add
             boolean updated = false;
             for (int i = 0; i < indexEntries.size(); i++) {
                 if (indexEntries.get(i).getFilePath().equals(filepath)) {
@@ -169,8 +190,29 @@ public class Repository {
             writeIndex(indexEntries);
 
         } catch (Exception e) {
-            throw new RepositoryException("Error adding to index: " + e.getMessage());
+            throw new RepositoryException("Error adding file to index: " + e.getMessage());
         }
     }
 
+    private void addDirectoryToIndex(File directory, String basePath) throws RepositoryException {
+        File[] files = directory.listFiles();
+        if (files == null) {
+            return;
+        }
+
+        for (File file : files) {
+            String currentPath = basePath.isEmpty() ? file.getName() : basePath + File.separator + file.getName();
+
+            // Skip .gitjava
+            if (currentPath.contains(PATH_NAME)) {
+                continue;
+            }
+
+            if (file.isFile()) {
+                addFileToIndex(currentPath);
+            } else if (file.isDirectory()) {
+                addDirectoryToIndex(file, currentPath);
+            }
+        }
+    }
 }
