@@ -3,8 +3,7 @@ package dev.anshmehta;
 import dev.anshmehta.exceptions.DirectoryExistsException;
 import dev.anshmehta.exceptions.FileExistsException;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 
 
 public class FileManager {
@@ -74,6 +73,40 @@ public class FileManager {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
 
+    public byte[] readFile(String fileName){
+
+        try{
+            String filePath = this.currentDirAddress + File.separator + fileName;
+            File f = new  File(filePath);
+            FileInputStream fis = new FileInputStream(f);
+
+            byte[] fileContent = new byte[(int) f.length()];
+            int  read = fis.read(fileContent);
+            fis.close();
+            if(read!=fileContent.length){
+                throw new IOException("Cound not read entire file");
+            }
+
+            return fileContent;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void writeFile(String fileName, byte[] fileContent){
+        try{
+            String filePath = this.currentDirAddress + File.separator + fileName;
+            File f = new  File(filePath);
+            FileOutputStream fos = new FileOutputStream(f);
+            fos.write(fileContent);
+            fos.flush();
+            fos.close();
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
