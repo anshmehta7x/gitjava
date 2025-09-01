@@ -148,7 +148,8 @@ public class Repository {
 
             // get file contents -> calculate hash -> create entry
             byte[] fileContent = mainDirFileManager.readFile(filepath);
-            String sha1Hash = Hashing.calculateSHA1(fileContent);
+            String fileContentStr = new String(fileContent, java.nio.charset.StandardCharsets.UTF_8);
+            String sha1Hash = writeHashedObject(fileContentStr,"blob");
             IndexEntry entry = new IndexEntry(filepath, sha1Hash, fileContent.length);
 
             ArrayList<IndexEntry> indexEntries = readIndex();

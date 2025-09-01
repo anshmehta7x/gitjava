@@ -6,10 +6,10 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 public  class Compressor {
-    private static final Deflater deflater = new Deflater();
-    private static final Inflater inflater = new Inflater();
+
 
     public static byte[] zlibCompress(byte[] data) {
+       final Deflater deflater = new Deflater();
        deflater.setInput(data);
        deflater.finish();
        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -18,10 +18,12 @@ public  class Compressor {
            int len = deflater.deflate(buffer);
            outputStream.write(buffer, 0, len);
        }
+       deflater.end();
        return outputStream.toByteArray();
     }
 
     public static byte[] zlibDecompress(byte[] data) throws DataFormatException {
+        final Inflater inflater = new Inflater();
         inflater.setInput(data);
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
@@ -30,6 +32,10 @@ public  class Compressor {
             outputStream.write(buffer, 0, len);
 
         }
+        inflater.end();
         return outputStream.toByteArray();
+
+
     }
+
 }
