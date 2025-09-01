@@ -1,10 +1,12 @@
 package dev.anshmehta;
 
+import java.util.zip.DataFormatException;
+
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws DataFormatException {
         Repository repository = new Repository();
         repository.initializeRepository();
-        String hash = repository.writeHashedObject("hello","blob");
-        repository.readObject(repository.findObject(hash));
+        repository.addToIndex("README.md");
+        repository.addToIndex("pom.xml");
     }
 }

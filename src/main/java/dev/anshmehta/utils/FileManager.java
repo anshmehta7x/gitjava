@@ -1,4 +1,4 @@
-package dev.anshmehta;
+package dev.anshmehta.utils;
 
 import dev.anshmehta.exceptions.DirectoryExistsException;
 import dev.anshmehta.exceptions.FileExistsException;

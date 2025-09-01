@@ -1,4 +1,4 @@
-package dev.anshmehta;
+package dev.anshmehta.utils;
 
 import java.security.MessageDigest;
 
