@@ -4,6 +4,7 @@ import dev.anshmehta.exceptions.DirectoryExistsException;
 import dev.anshmehta.exceptions.FileExistsException;
 
 import java.io.*;
+import java.util.ArrayList;
 
 
 public class FileManager {
@@ -36,7 +37,6 @@ public class FileManager {
             }
             File newDir = new File(this.currentDirAddress + File.separator + dir);
             if(newDir.mkdir()){
-                System.out.println("Directory created!");
                 return true;
             }
             else{
@@ -90,6 +90,24 @@ public class FileManager {
             }
 
             return fileContent;
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public ArrayList<String> readAllLines(String fileName){
+        ArrayList<String> lines = new ArrayList<>();
+        try{
+            String filePath = this.currentDirAddress + File.separator + fileName;
+            File f = new  File(filePath);
+            BufferedReader br = new BufferedReader(new FileReader(f));
+            String line;
+            while((line = br.readLine())!=null){
+                lines.add(line);
+            }
+            br.close();
+            return lines;
 
         } catch (IOException e) {
             throw new RuntimeException(e);

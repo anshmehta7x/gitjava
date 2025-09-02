@@ -8,6 +8,7 @@ import dev.anshmehta.utils.Hashing;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.zip.DataFormatException;
 
 public class Repository {
@@ -138,19 +139,44 @@ public class Repository {
         }
     }
 
+    private boolean isIgnored(String filepath, HashSet<String> ignorePatterns) {
+        for (String pattern : ignorePatterns) {
+            pattern = pattern.trim();
+            if (pattern.isEmpty() || pattern.startsWith("#")) continue;
+            if (filepath.equals(pattern)) return true;
+            if (pattern.startsWith("*") && filepath.endsWith(pattern.substring(1))) return true;
+            if (pattern.endsWith("/") && filepath.startsWith(pattern)) return true;
+            if (filepath.contains(pattern)) return true;
+        }
+        return false;
+    }
 
     public void addToIndex(String filepath) throws RepositoryException {
         try {
+
             File f = new File(filepath);
             if (!f.exists()) {
                 throw new RepositoryException("Path does not exist: " + filepath);
             }
+            HashSet<String> toIgnore = new HashSet<>();
+            File ignoreFile = new File(".gitignore");
+            if(ignoreFile.exists()){
+                toIgnore.addAll(mainDirFileManager.readAllLines(".gitignore"));
+            }
+            System.out.println(toIgnore.toString());
 
             if (f.isFile()) {
-                addFileToIndex(filepath);
+                if (isIgnored(filepath, toIgnore)) {
+                    System.out.println("ignoring " + filepath);
+                    return;
+                }
+                addFileToIndex(filepath,toIgnore);
             } else if (f.isDirectory()) {
-                // Handle directory recursively
-                addDirectoryToIndex(f, filepath);
+                if (isIgnored(filepath, toIgnore)) {
+                    System.out.println("ignoring " + filepath);
+                    return;
+                }
+                addDirectoryToIndex(f, filepath, toIgnore);
             } else {
                 throw new RepositoryException("Path is neither a file nor directory: " + filepath);
             }
@@ -159,15 +185,16 @@ public class Repository {
         }
     }
 
-    private void addFileToIndex(String filepath) throws RepositoryException {
+    private void addFileToIndex(String filepath, HashSet<String> toIgnore) throws RepositoryException {
         try {
+            if (isIgnored(filepath, toIgnore)) {
+                System.out.println("ignoring " + filepath);
+                return;
+            }
             File f = new File(filepath);
-            // Skip .gitjava
             if (filepath.contains(PATH_NAME)) {
                 return;
             }
-
-            // Get file contents -> calculate hash -> create entry
             byte[] fileContent = mainDirFileManager.readFile(filepath);
             String fileContentStr = new String(fileContent, java.nio.charset.StandardCharsets.UTF_8);
             String sha1Hash = writeHashedObject(fileContentStr, "blob");
@@ -175,7 +202,6 @@ public class Repository {
 
             ArrayList<IndexEntry> indexEntries = readIndex();
 
-            // Check if file already exists in index → update, else add
             boolean updated = false;
             for (int i = 0; i < indexEntries.size(); i++) {
                 if (indexEntries.get(i).getFilePath().equals(filepath)) {
@@ -194,7 +220,11 @@ public class Repository {
         }
     }
 
-    private void addDirectoryToIndex(File directory, String basePath) throws RepositoryException {
+    private void addDirectoryToIndex(File directory, String basePath, HashSet<String> toIgnore) throws RepositoryException {
+        if (isIgnored(basePath, toIgnore)) {
+            System.out.println("ignoring " + basePath);
+            return;
+        }
         File[] files = directory.listFiles();
         if (files == null) {
             return;
@@ -203,16 +233,28 @@ public class Repository {
         for (File file : files) {
             String currentPath = basePath.isEmpty() ? file.getName() : basePath + File.separator + file.getName();
 
-            // Skip .gitjava
             if (currentPath.contains(PATH_NAME)) {
                 continue;
             }
 
             if (file.isFile()) {
-                addFileToIndex(currentPath);
+                addFileToIndex(currentPath, toIgnore);
             } else if (file.isDirectory()) {
-                addDirectoryToIndex(file, currentPath);
+                addDirectoryToIndex(file, currentPath, toIgnore);
             }
         }
+    }
+
+    public void status(){
+        ArrayList<IndexEntry> indexEntries = readIndex();
+        System.out.println("Tracked files:");
+        for(IndexEntry entry : indexEntries){
+            System.out.println(entry.getFilePath() + " " + entry.getSha1() + " " + entry.getFileSize());
+        }
+    }
+
+    public void commit(String message){
+        // commit -> message, timestamp, previous commit, files and hashes
+//        String data = String.format("%s ", message);
     }
 }
