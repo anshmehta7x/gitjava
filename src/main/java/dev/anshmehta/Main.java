@@ -8,6 +8,9 @@ public class Main {
         repository.initializeRepository();
         repository.addToIndex(".");
         repository.status();
+        repository.commit("Initial commit");
+        System.out.println("\nAfter commit:");
+        repository.status();
 
     }
 }

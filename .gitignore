@@ -5,6 +5,8 @@ cleanup.py
 
 .idea
 
+.git
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/

@@ -9,6 +9,7 @@ import dev.anshmehta.utils.Hashing;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.zip.DataFormatException;
 
 public class Repository {
@@ -254,7 +255,74 @@ public class Repository {
     }
 
     public void commit(String message){
-        // commit -> message, timestamp, previous commit, files and hashes
-//        String data = String.format("%s ", message);
+        ArrayList<IndexEntry> indexEntries = readIndex();
+        if (indexEntries.isEmpty()) {
+            System.out.println("Nothing to commit, working tree clean");
+            return;
+        }
+
+        StringBuilder treeObjectContent = new StringBuilder();
+        for (IndexEntry entry : indexEntries) {
+            treeObjectContent.append("blob ").append(entry.getSha1()).append(" ").append(entry.getFilePath()).append("\n");
+        }
+        String treeSha1 = writeHashedObject(treeObjectContent.toString(), "tree");
+
+        String parentCommit = null;
+        try {
+            List<String> headLines = repoDirFileManager.readAllLines("HEAD");
+            if (!headLines.isEmpty()) {
+                parentCommit = headLines.get(headLines.size() - 1);
+            }
+        } catch (Exception e) {
+        }
+
+        long timestamp = System.currentTimeMillis() / 1000;
+        String author = "Ansh Mehta <ansh@gmail.com>";
+        StringBuilder commitObjectContent = new StringBuilder();
+        commitObjectContent.append("tree ").append(treeSha1).append("\n");
+        if (parentCommit != null) {
+            commitObjectContent.append("parent ").append(parentCommit).append("\n");
+        }
+        commitObjectContent.append("author ").append(author).append(" ").append(timestamp).append(" +0530\n");
+        commitObjectContent.append("committer ").append(author).append(" ").append(timestamp).append(" +0530\n");
+        commitObjectContent.append("\n");
+        commitObjectContent.append(message).append("\n");
+
+        String commitSha1 = writeHashedObject(commitObjectContent.toString(), "commit");
+
+        try {
+            ArrayList<String> headLines = repoDirFileManager.readAllLines("HEAD");
+            headLines.add(commitSha1);
+            StringBuilder sb = new StringBuilder();
+            for (String line : headLines) {
+                sb.append(line).append("\n");
+            }
+            repoDirFileManager.writeFile("HEAD", sb.toString().getBytes());
+        } catch (Exception e) {
+            throw new RepositoryException("Error writing to HEAD: " + e.getMessage());
+        }
+        System.out.println("Committed " + commitSha1);
+    }
+
+
+    public HashSet<String> getAllFiles(){
+        HashSet<String> allFiles = new HashSet<>();
+        File currentDir = new File(mainDirFileManager.getCurrentDir());
+        getAllFilesHelper(currentDir, "", allFiles);
+        return allFiles;
+    }
+
+    private void getAllFilesHelper(File dir, String basePath, HashSet<String> allFiles){
+        File[] files = dir.listFiles();
+        if(files == null) return;
+        for(File f : files){
+            String currentPath = basePath.isEmpty() ? f.getName() : basePath + File.separator + f.getName();
+            if(f.isFile()){
+                allFiles.add(currentPath);
+            }
+            else if(f.isDirectory()){
+                getAllFilesHelper(f, currentPath, allFiles);
+            }
+        }
     }
 }
