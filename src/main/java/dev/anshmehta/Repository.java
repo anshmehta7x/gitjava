@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.zip.DataFormatException;
 
 public class Repository {
-    private String PATH_NAME = ".gitjava";
-    private FileManager mainDirFileManager;
+    final private String PATH_NAME = ".gitjava";
+    final private FileManager mainDirFileManager;
     private boolean isInitialized = false;
     private FileManager repoDirFileManager;
     private FileManager objDirFileManager;
@@ -178,7 +178,7 @@ public class Repository {
             if(ignoreFile.exists()){
                 toIgnore.addAll(mainDirFileManager.readAllLines(".gitignore"));
             }
-            System.out.println(toIgnore.toString());
+//            System.out.println(toIgnore.toString());
 
             if (f.isFile()) {
                 if (isIgnored(filepath, toIgnore)) {
@@ -285,9 +285,10 @@ public class Repository {
         try {
             List<String> headLines = repoDirFileManager.readAllLines("HEAD");
             if (!headLines.isEmpty()) {
-                parentCommit = headLines.get(headLines.size() - 1);
+                parentCommit = headLines.getLast();
             }
         } catch (Exception e) {
+            throw new RepositoryException("Error reading HEAD: " + e.getMessage());
         }
 
         long timestamp = System.currentTimeMillis() / 1000;
