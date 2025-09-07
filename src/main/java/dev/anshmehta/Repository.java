@@ -21,9 +21,23 @@ public class Repository {
 
     public Repository() {
         this.mainDirFileManager = new FileManager();
+        this.checkIfInitialized();
+    }
+
+    private void checkIfInitialized() {
+        File repoDir = new File(this.PATH_NAME);
+        if(repoDir.exists() && repoDir.isDirectory()) {
+            isInitialized = true;
+            repoDirFileManager = new FileManager(PATH_NAME);
+            objDirFileManager = new FileManager(PATH_NAME + File.separator + "objects");
+        }
     }
 
     public void initializeRepository() {
+        if(isInitialized){
+            System.out.println("Repository already initialized");
+            return;
+        }
         try{
             isInitialized = mainDirFileManager.createDir(PATH_NAME);
             if(isInitialized) {
@@ -42,7 +56,7 @@ public class Repository {
 
     }
 
-    public String writeHashedObject(String data,String type){
+    private String writeHashedObject(String data,String type){
         byte[] byteData = Hashing.hashObject(data,type);
         String sha1Hash = Hashing.calculateSHA1(byteData);
         assert sha1Hash != null;
@@ -53,7 +67,7 @@ public class Repository {
         return sha1Hash;
     }
 
-    public byte[] findObject(String hashedObject){
+    private byte[] findObject(String hashedObject){
 
         try {
             String objectPath = hashedObject.substring(0, 2) +  File.separator + hashedObject.substring(2);
@@ -64,7 +78,7 @@ public class Repository {
         }
     }
 
-    public void readObject(byte[] objectData) throws DataFormatException {
+    private void readObject(byte[] objectData) throws DataFormatException {
         byte[] decompressedData = Compressor.zlibDecompress(objectData);
 
         try {
@@ -102,7 +116,7 @@ public class Repository {
         }
     }
 
-    public void writeIndex(ArrayList<IndexEntry> indexEntries) {
+    private void writeIndex(ArrayList<IndexEntry> indexEntries) {
         try {
             StringBuilder sb = new StringBuilder();
             for (IndexEntry entry : indexEntries) {
@@ -114,7 +128,7 @@ public class Repository {
         }
     }
 
-    public ArrayList<IndexEntry> readIndex() {
+    private ArrayList<IndexEntry> readIndex() {
         try {
             ArrayList<IndexEntry> indexEntries = new ArrayList<>();
             File indexFile = new File(PATH_NAME + File.separator + "index");
